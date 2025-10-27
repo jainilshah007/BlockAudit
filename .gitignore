@@ -8,8 +8,6 @@ Python cache files
 pycache/
 *.pyc
 
-Generated FAISS index files
-faiss_index/
 
 Log files
 *.log
