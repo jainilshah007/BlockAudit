@@ -1,0 +1,17 @@
+Environment variables - NEVER commit this file!
+.env
+
+Python virtual environment
+venv/
+
+Python cache files
+pycache/
+*.pyc
+
+Generated FAISS index files
+faiss_index/
+
+Log files
+*.log
+
+README.md

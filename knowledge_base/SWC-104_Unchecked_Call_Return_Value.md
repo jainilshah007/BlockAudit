@@ -1,0 +1,35 @@
+The content of the SWC registry has not been thoroughly updated since 2020. It is known to be incomplete and may contain errors as well as crucial omissions.
+
+For currently maintained guidance on known Smart Contract vulnerabilities written primarily as guidance for security reviewers, please see the EEA EthTrust Security Levels specification. As well as the latest release version, an Editor's draft is available, that represents the latest work of the group developing the specification.
+
+General guidance for developers on what to consider to ensure security, that is currently maintained, is also available through the Smart Contract Security Verification Standard (SCSVS).
+
+Title
+Unchecked Call Return Value
+
+Relationships
+CWE-252: Unchecked Return Value
+EthTrust Security Levels:
+[M] Handle External Call Returns
+Description
+The return value of a message call is not checked. Execution will resume even if the called contract throws an exception. If the call fails accidentally or an attacker forces the call to fail, this may cause unexpected behaviour in the subsequent program logic.
+
+Remediation
+If you choose to use low-level call methods, make sure to handle the possibility that the call will fail by checking the return value.
+
+References
+Ethereum Smart Contract Best Practices - Handle errors in external calls
+Samples
+unchecked_return_value.sol
+pragma solidity 0.4.25;
+
+contract ReturnValue {
+
+  function callchecked(address callee) public {
+    require(callee.call());
+  }
+
+  function callnotchecked(address callee) public {
+    callee.call();
+  }
+}
