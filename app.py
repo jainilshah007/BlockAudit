@@ -307,7 +307,7 @@ if qa_chain:
                 <div class="custom-card" style="text-align: center;">
                     <div style="font-size: 2.5rem;">🎯</div>
                     <h4 style="color: #fff; margin: 0.5rem 0;">Accurate</h4>
-                    <p style="color: #8892a6; font-size: 0.85rem;">99% precision rate</p>
+                    <p style="color: #8892a6; font-size: 0.85rem;">Good precision rate</p>
                 </div>
             """, unsafe_allow_html=True)
         with col3:
