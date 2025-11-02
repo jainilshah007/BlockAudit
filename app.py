@@ -375,7 +375,7 @@ if qa_chain:
             st.markdown("---")
             
             st.markdown("### 🤖 Deep AI Analysis")
-            with st.spinner("🔬 Guardian AI is performing comprehensive analysis..."):
+            with st.spinner(" AI is performing comprehensive analysis..."):
                 try:
                     analysis_result = analyze_code_with_ai(qa_chain, user_input)
                     st.markdown(f"""
@@ -388,19 +388,19 @@ if qa_chain:
                     logger.critical(f"An unhandled exception occurred in the main analysis block: {e}", exc_info=True)
                     st.error("⚠️ A critical error occurred during analysis. The incident has been logged. Please check `auditor.log` for details.")
     
-    with tab2:
-        st.markdown("### 📚 Security Knowledge Base")
-        st.markdown("""
-        <div class="custom-card">
-            <p style="color: #b8c5d6;">
-            Access our comprehensive database of smart contract vulnerabilities, 
-            best practices, and security patterns. Ask any question about blockchain security.
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+    # with tab2:
+    #     st.markdown("### 📚 Security Knowledge Base")
+    #     st.markdown("""
+    #     <div class="custom-card">
+    #         <p style="color: #b8c5d6;">
+    #         Access our comprehensive database of smart contract vulnerabilities, 
+    #         best practices, and security patterns. Ask any question about blockchain security.
+    #         </p>
+    #     </div>
+    #     """, unsafe_allow_html=True)
         
-        # Add knowledge base content here
-        st.info("💡 Coming soon: Interactive knowledge base with searchable vulnerability database")
+    #     # Add knowledge base content here
+    #     st.info("💡 Coming soon: Interactive knowledge base with searchable vulnerability database")
         
 else:
     st.error("⚠️ The Guardian engine could not be initialized. Please check the console and `auditor.log` for details.")

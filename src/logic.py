@@ -37,8 +37,8 @@ def initialize_qa_chain(index_path="faiss_index"):
         vector_store = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
         logger.info("FAISS index loaded successfully.")
         
-        # This custom prompt template instructs the LLM to act as a security expert
-        # and structure its response in a clear, actionable format.
+        # Enhanced prompt template that ALWAYS requires code suggestions
+        # If context has examples, use them; otherwise generate secure code
         prompt_template = """
         You are an expert smart contract security auditor. Your task is to analyze the given Solidity code snippet based on the provided context of known vulnerabilities and best practices.
         Focus ONLY on the provided code snippet.
@@ -55,7 +55,9 @@ def initialize_qa_chain(index_path="faiss_index"):
         - **Severity:** [Critical / High / Medium / Low / Informational]
         - **Description:** [A detailed explanation of the vulnerability and why it is a risk.]
         - **Recommendation:** [Actionable steps and suggested code changes to fix the vulnerability.]
-        - **Suggested Code:** [Provide a secure code snippet that fixes the identified issue. Use Solidity markdown formatting.]
+        - **Suggested Code:** [MANDATORY: You MUST always provide a complete, secure code snippet that fixes the identified issue. If the context contains code examples, adapt them. If not, generate a secure implementation based on Solidity best practices. Always use proper ```solidity code blocks with complete, compilable code. Never leave this empty or provide placeholders.]
+        
+        IMPORTANT: The "Suggested Code" section is REQUIRED for every vulnerability found. It must contain actual, complete Solidity code that can be used to fix the issue.
         
         If no vulnerabilities are found, state: "- **Severity:** None" and omit the other fields.
         """
@@ -76,14 +78,63 @@ def initialize_qa_chain(index_path="faiss_index"):
         st.error(f"Failed to initialize the QA chain. See auditor.log for details.")
         return None
 
+def generate_code_fix_with_chatgpt(code_snippet, vulnerability_description, api_key):
+    """
+    Fallback function to generate secure code fix using ChatGPT when knowledge base
+    doesn't provide good examples.
+    """
+    llm = OpenAI(temperature=0, openai_api_key=api_key)
+    
+    prompt = f"""You are an expert Solidity security developer. Generate a secure, complete code fix for the following vulnerability.
+
+Vulnerable Code:
+```solidity
+{code_snippet}
+```
+
+Vulnerability Description:
+{vulnerability_description}
+
+Provide ONLY a complete, secure Solidity code snippet that fixes this vulnerability. Include proper error handling, security checks, and best practices. Use ```solidity code blocks."""
+    
+    try:
+        response = llm.invoke(prompt)
+        return response.content.strip() if hasattr(response, 'content') else str(response).strip()
+    except Exception as e:
+        logger.error(f"Error generating code fix with ChatGPT: {e}")
+        return "```solidity\n// Error generating code fix. Please review the recommendations above.\n```"
+
+def has_valid_code_suggestion(result_text):
+    """
+    Checks if the result contains a valid code suggestion.
+    Returns True if it contains code blocks with actual code.
+    """
+    # Check for code blocks
+    if "```solidity" not in result_text and "```" not in result_text:
+        return False
+    
+    # Extract code between code blocks
+    code_blocks = re.findall(r'```(?:solidity)?\s*(.*?)```', result_text, re.DOTALL)
+    
+    # Check if any code block has meaningful content
+    for block in code_blocks:
+        code_content = block.strip()
+        # Check if it's not just comments or placeholders
+        if len(code_content) > 20 and not all(c in ['/', '*', ' ', '\n', '-', '_', '.'] for c in code_content.replace(' ', '').replace('\n', '')):
+            return True
+    
+    return False
+
 def analyze_code_with_ai(qa_chain, code):
     """
     Parses the code into functions and analyzes each function individually for vulnerabilities.
+    Includes fallback to ChatGPT for code generation when knowledge base doesn't provide good examples.
     """
     logger.info(f"Starting AI analysis for code snippet of length {len(code)}.")
     functions_to_analyze = parse_solidity_code(code)
     
     full_analysis = ""
+    api_key = get_openai_api_key()
 
     if not functions_to_analyze:
          logger.warning("Could not parse the Solidity code. Analyzing the full snippet as a fallback.")
@@ -91,11 +142,39 @@ def analyze_code_with_ai(qa_chain, code):
 
     for i, func in enumerate(functions_to_analyze):
         logger.info(f"Analyzing function {i+1}/{len(functions_to_analyze)}: {func['name']}")
-        query = f"Analyze this Solidity code for security vulnerabilities: \n```solidity\n{func['code']}\n```"
+        query = f"Analyze this Solidity code for security vulnerabilities and provide secure fixes: \n```solidity\n{func['code']}\n```"
         try:
             response = qa_chain.invoke({"query": query})
+            result = response["result"]
+            
+            # Check if result contains vulnerabilities but lacks proper code suggestions
+            if "Vulnerability:" in result or "**Severity:**" in result:
+                # Extract vulnerability description for fallback if needed
+                vulnerability_match = re.search(r'### Vulnerability:\s*(.+?)(?:\n|$)', result, re.IGNORECASE)
+                description_match = re.search(r'\*\*Description:\*\*\s*(.+?)(?:\*\*Recommendation|\*\*Suggested Code|$)', result, re.DOTALL)
+                
+                vulnerability_name = vulnerability_match.group(1).strip() if vulnerability_match else "Security Issue"
+                vulnerability_desc = description_match.group(1).strip() if description_match else vulnerability_name
+                
+                # Check if Suggested Code section is empty or invalid
+                suggested_code_match = re.search(r'\*\*Suggested Code:\*\*\s*(.+?)(?:\n\n|\n###|$)', result, re.DOTALL)
+                
+                if not suggested_code_match or not has_valid_code_suggestion(result):
+                    logger.info(f"Generated code suggestion is weak/empty for {func['name']}. Using ChatGPT fallback.")
+                    # Generate secure code using ChatGPT as fallback
+                    generated_code = generate_code_fix_with_chatgpt(func['code'], vulnerability_desc, api_key)
+                    
+                    # Replace or append the Suggested Code section
+                    if suggested_code_match:
+                        # Replace existing weak suggestion
+                        old_suggestion = suggested_code_match.group(0)
+                        result = result.replace(old_suggestion, f"**Suggested Code:** {generated_code}")
+                    else:
+                        # Append if missing
+                        result += f"\n\n**Suggested Code:** {generated_code}"
+            
             full_analysis += f"## Analysis for: `{func['name']}`\n\n"
-            full_analysis += response["result"]
+            full_analysis += result
             full_analysis += "\n\n---\n\n"
         except Exception as e:
             logger.error(f"Error analyzing function {func['name']}: {e}", exc_info=True)
