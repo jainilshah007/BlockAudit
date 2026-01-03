@@ -4,12 +4,6 @@ BlockAudit is a state-of-the-art, production-ready security analysis platform th
 
 This platform represents the convergence of **Large Language Models (LLMs)**, **Transformer architectures**, **Dense Vector Embeddings**, and **Knowledge-Augmented Generation** to solve real-world security challenges in the Web3 ecosystem.
 
-📖 **Documentation**: 
-- **[Technical Architecture](./TECHNICAL_ARCHITECTURE.md)** - Comprehensive system design documentation
-- **[Client Presentation](./CLIENT_PRESENTATION.md)** - Executive technical overview
-- **[Quick Reference](./TECH_STACK_CARD.md)** - Technical stack reference card
-
-(Note: Replace this with an actual screenshot or GIF of your app)
 
 ✨ **Key Features**
 
@@ -146,23 +140,6 @@ The application will open in your web browser.
 - ✅ **Explainable AI (XAI)**: Transparent reasoning with source citations
 - ✅ **Production-Ready Scalability**: Horizontal scaling with FAISS sharding support
 
-🗺️ **Future Roadmap**
-
-[ ] **Fine-Tuning Capabilities**: Domain-specific model adaptation on audit reports
-
-[ ] **Multi-Model Ensemble**: Consensus-based vulnerability detection across multiple LLMs
-
-[ ] **Hybrid Retrieval**: Combine dense embeddings with sparse (BM25) search for improved recall
-
-[ ] **Cross-Encoder Reranking**: Second-stage relevance scoring for optimal chunk selection
-
-[ ] **Active Learning**: Continuous improvement from user feedback loops
-
-[ ] **Full Project Analysis**: Support for Hardhat/Foundry multi-file codebases
-
-[ ] **Real-Time Collaboration**: Multi-user audit sessions with shared context
-
-[ ] **CI/CD Integration**: GitHub Actions / GitLab CI plugins for automated security checks
 
 🤝 Contributing
 Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
