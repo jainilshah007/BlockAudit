@@ -26,6 +26,6 @@ for file in files:
                 f.write(content.content)
             count += 1
         else:
-            print(f"❌ Failed to download {file['name']}")
+            print(f" Failed to download {file['name']}")
 
 print(f"\n✅ Downloaded {count} Markdown files into '{OUTPUT_DIR}' folder.")
